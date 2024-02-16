@@ -1,0 +1,9 @@
+^_targets\.R$
+^\.Rprofile$
+^tar_visnetwork\.yml$
+^report$
+^report/_bookdown\.yml$
+^report/_output\.yml$
+^report/index\.Rmd$
+^report/chapter1\.Rmd$
+^report/chapter2\.Rmd$
