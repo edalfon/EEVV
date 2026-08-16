@@ -32,9 +32,12 @@ check_vars <- function(nac_raw) {
     ) |>
     mutate(across(c(var_class, var_type, var_unique), function(column) {
       purrr::map_chr(column, function(x) {
+        # as.character() first: some columns (e.g. hms/difftime "hora"
+        # variables) error out of paste0() directly, since paste0() doesn't
+        # know how to coerce every S3 class on its own
         paste0(
           "[",
-          paste0(sort(unlist(x)), collapse = "], ["),
+          paste0(sort(as.character(unlist(x))), collapse = "], ["),
           "]"
         )
       })
