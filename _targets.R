@@ -5,7 +5,6 @@ tar_option_set(
 
 list(
   plan_ingest_eevv(),
-  plan_ingest_nac(),
   # flowme::tar_bookdown("report"),
   NULL
 )

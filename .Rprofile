@@ -1,5 +1,35 @@
+source("renv/activate.R")
+
+# --- vscode-R session watcher on R >= 4.6 ---------------------------------
+# vscode-R hooks the end of R's startup by shadowing .First.sys in globalenv
+# (<ext>/R/session/init.R). R 4.6 stopped calling .First.sys from globalenv and
+# calls base::.First.sys directly, so the watcher's init_last() is queued and
+# never invoked: no `tools:vscode`, no .vsc.attach, and rstudioapi::isAvailable()
+# returns FALSE. R still calls .First from globalenv, so drain the queue there.
+#
+# Requires jsonlite and rlang in the project library, or init.R declines to
+# queue itself at all. No-op outside VS Code, so this is safe to commit.
+# Upstream: https://github.com/REditorSupport/vscode-R/issues/1696
+local({
+  prev <- if (exists(".First", envir = globalenv(), inherits = FALSE)) {
+    get(".First", envir = globalenv())
+  }
+  assign(
+    ".First",
+    function() {
+      if (is.function(prev)) {
+        try(prev())
+      }
+      if (exists(".First.sys", envir = globalenv(), inherits = FALSE)) {
+        try(get(".First.sys", envir = globalenv())())
+      }
+    },
+    envir = globalenv()
+  )
+})
+
 options(conflicts.policy = "strict")
-options(vsc.rstudioapi = TRUE)
+
 if (file.exists("~/.Rprofile")) {
   source("~/.Rprofile")
 }

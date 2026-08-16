@@ -2,8 +2,10 @@
 
 export(check_vars)
 export(encode_ddi_factor)
+export(get_nac_zip_files)
 export(get_var_labels_only)
 export(homologate_vars)
 export(ingest_eevv_ddi)
 export(ingest_eevv_nac)
+export(select_nac_vars)
 export(set_var_label)

@@ -14,3 +14,7 @@ tar_load <- purrr::partial(
   .f = targets::tar_load,
   store = here::here(targets::tar_config_get("store"))
 )
+
+tar_fn <- function(fn) {
+  lapply(as.list(body(fn))[-1], eval)
+}
