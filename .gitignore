@@ -1,1 +1,21 @@
 _targets
+
+# R session/workspace
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# renv local library (keep renv.lock, renv/activate.R, renv/settings.json)
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini

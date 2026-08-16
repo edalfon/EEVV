@@ -1,0 +1,604 @@
+---
+title: "Inspect vars info over time"
+output: 
+  html_notebook:
+    code_folding: hide
+---
+
+```{r}
+vars_info <- tar_read(vars_info)
+```
+
+```{r results="asis"}
+nac_raw <- tar_read(nac_raw)
+```
+
+
+To quickly visuallize what has changed, we'll take
+a look at a few plots that show i) which variables exist in which years 
+and ii) how are those variables encoded (class, type and unique values). 
+This is an input to individually decide what to do with each variable 
+(e.g. include/exclude, how to homologate them when categories have changed).
+And it should help later down the line, when we -if and when- want to update
+this analysis with newly published data (simply add the data and take a look 
+at the last year to see if there is something different).
+
+# Data as Ingested
+
+```{r}
+plotly::ggplotly(
+  vars_info |>
+    mutate(value = 1) |>
+    ggplot(aes(x = year, y = var_names, fill = value, text = glue::glue(
+      "\n",
+      "var_class: {var_class}",
+      "var_type: {var_type}",
+      "var_unique: {var_unique}",
+      .sep = "\n"
+    ))) +
+    geom_tile() +
+    theme(legend.position = "none")
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+```{r}
+plotly::ggplotly(
+  vars_info |>
+    ggplot(aes(x = year, y = var_names, fill = var_class, text = glue::glue(
+      "\n",
+      "var_class: {var_class}",
+      "var_type: {var_type}",
+      "var_unique: {var_unique}",
+      .sep = "\n"
+    ))) +
+    geom_tile()
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+```{r}
+plotly::ggplotly(
+  vars_info |>
+    ggplot(aes(x = year, y = var_names, fill = var_type, text = glue::glue(
+      "\n",
+      "var_class: {var_class}",
+      "var_type: {var_type}",
+      "var_unique: {var_unique}",
+      .sep = "\n"
+    ))) +
+    geom_tile()
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+```{r}
+plotly::ggplotly(
+  vars_info |>
+    ggplot(aes(x = year, y = var_names, fill = var_unique, text = glue::glue(
+      "\n",
+      "var_class: {var_class}",
+      "var_type: {var_type}",
+      "var_unique: {var_unique}",
+      .sep = "\n"
+    ))) +
+    geom_tile() +
+    theme(legend.position = "none")
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+# DDI Ingested Categories
+
+```{r}
+ddi_nac_vars <- tar_read(ddi_nac_vars)
+
+ddi_nac_vars <- ddi_nac_vars |>
+  mutate(catgry = purrr::map_chr(catgry, \(x)  {
+    paste0("\n", paste0(paste(x$catValu, x$labl, sep = ": "), collapse = "\n"))
+  }))
+```
+
+```{r}
+plotly::ggplotly(
+  ddi_nac_vars |>
+    ggplot(aes(x = year, y = name, fill = catgry, text = glue::glue(
+      "\n",
+      "intrvl: {intrvl}",
+      .sep = "\n"
+    ))) +
+    geom_tile() +
+    theme(legend.position = "none")
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+
+# Checking vars
+
+```{r}
+already_checked <- c()
+```
+
+```{r results="asis"}
+being_checked <- c("ano")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+it's all good, data available for all years (surprise!), only
+thing to fix: some years are encoded as character and some as numeric
+so, let's make them all character (or factor?), 'cause anyway this
+variable will mostly (always?) be used as a categorical variable'
+
+```{r results="asis"}
+being_checked <- c("apgar1", "apgar2")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+until 2007 grouped values as follows
+
+- 1: apgar <5
+- 2: apgar between 5-6
+- 3: apgar >=7
+- 9: sin información
+
+from 2008 on, integers between 1 and 10, and 99 for "sin información",
+and some observations with empty values (so, not explicitly 99, nor NA, but "").
+Also, some years encoded as numeric, and some as character, with values e.g. 01
+so we want to homologate this as follows:
+
+* create apgar1_old and apgar2_old, recoding the periods from 2008, to use
+  the groupings used in the years before 2008
+* keep apgar1 and apgar2 from 2008 on, and set the previous as NA
+* Convert "sin información", and empty values, to NA
+
+```{r results="asis"}
+being_checked <- c("area_res", "areanac")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- all years share the values 1, 2, 3, and the 9 for missing value, just not 
+  present in some of the latest years. Some years have empty values ""
+- catgry, pretty consistent for both variables. Only 2018 does not have category
+  labels (bundled with 2017, so perhaps because of this)
+
+* just cast everything to numeric
+* make 9 to missing values
+* and finally encode with the DDI categories of any of the years (except 2018)
+
+```{r results="asis"}
+being_checked <- c("aten_par")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- all years share the values 1-6, plus 9 for missing value, just not 
+  present in some of the latest years. 
+- catgry, pretty consistent for all years. Only 2018 does not have category
+  labels (bundled with 2017, so perhaps because of this)
+
+* just cast everything to numeric
+* make 9 to missing values
+* and finally encode with the DDI categories of any of the years (except 2018)
+
+
+```{r results="asis"}
+being_checked <- c(
+  "cod_dpto", "cod_inst", "cod_munic", "codmunre", "codpres", "codptore"
+)
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+```{r results="asis"}
+nac_raw |>
+  filter(year == 2013) |>
+  pull(sav_data) |>
+  first() |>
+  pull(codptore) |>
+  glimpse() |>
+  attributes()
+```
+
+- cod_dpto, some years come as haven_labelled, but we would rather just keep
+  it as a string, hence, just DANE's code to two digits
+- cod_inst, no categories metadata, just the variable lable. Only 
+  available until 2017. TODO: check what happened there
+- cod_munic, no categories metadata, just the variable lable.
+- codmunre, metadata shows 999 as sin información. Should we explicitly make it 
+  missing (NA)?, or leave that for later. TODO: decide about missing
+- codpres, metadata shows 170 colombia, 999 sin información. DDI the same categories
+  until 2003, 2004 introduced 998 resto de países, but from 2008 to 2013 no DDI
+  categories and from 2014 on, only 170 colombia and 999 sin información
+- codptore, just a few years with metadata. 01, sin información
+
+* cast them all to character. 
+* Yet, a few years are originally encoded as numeric thus, it may require 
+  further processing down the line, for example, via daner to make valid 
+  2 or 3 digits codes
+
+```{r results="asis"}
+being_checked <- c("edad_madre", "edad_padre")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+```{r results="asis"}
+nac_raw |>
+  filter(year == 2015) |>
+  pull(sav_data) |>
+  first() |>
+  pull(edad_padre) |>
+  glimpse()
+```
+
+- all years available
+- edad_madre has consistent unique values and DDI categories across all years
+- edad_padre is weird, do not show unique values. Let's investigate: DONE:
+  edad_padre is expressed in years (99 used for sin información), 
+  while edad_madre contains categories for age brackets
+
+* encode edad_madre using DDI categories for any year (they are all the same)
+* keep edad_padre as numeric, and just conver 99 -> NA
+
+
+```{r results="asis"}
+being_checked <- c("est_civm")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+```{r results="asis"}
+ddi_nac_vars |>
+  filter(year == 2015, name == "est_civm") |>
+  pull(catgry) |>
+  first()
+```
+
+- available all years, consistent values, a few years with metadata.
+- DDI shows that the categories changed from 2008 on, so need to homologate
+
+__Until 2007__
+1       Soltera
+2       Casada
+3       Viuda
+4       En unión libre
+5       Separada o divorciada
+9       Sin información
+
+__From 2008 on__
+1       No está casada y lleva dos o más años viviendo con su pareja
+2       No está casada y lleva menos de dos años viviendo con su pareja
+3       Está separada, divorciada
+4       Está viuda
+5       Está soltera
+6       Está casada
+9       Sin información
+
+* keep est_civim encoding it with DDI categories, from 2008 on (and NA before that)
+* homologate >=2008 into <= 2007 as follows:
+  6 -> 2
+  5 -> 1
+  4 -> 3
+  3 -> 5
+  2 -> 1
+  1 -> 4
+
+
+
+```{r results="asis"}
+being_checked <- c("gru_san")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- only available until 2007
+- but otherwise pretty consistent, with complete DDI categories
+
+* only chnage 9 to NA and encode with DDI
+
+
+```{r results="asis"}
+being_checked <- c("idclasadmi")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- only available from 2008
+- but otherwise relatively consistent, same values, with just some years with 
+  empty "" and chnagins data type but ok for underlying values
+- with complete DDI categories, only missing for 2018
+
+* only chnage 9 and implicitly empty (i.e. "") to NA and encode with DDI
+
+
+```{r results="asis"}
+being_checked <- c("idclasadmi")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- only available from 2008
+- but otherwise relatively consistent, same values, with just some years with 
+  empty "" and chnagins data type but ok for underlying values
+- with complete DDI categories, only missing for 2018
+
+* only chnage 9 and implicitly empty (i.e. "") to NA and encode with DDI
+
+
+```{r results="asis"}
+being_checked <- c("idfactorrh", "idhemoclas")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- only available from 2008
+- but otherwise very consistent
+- with complete DDI categories, only missing for 2018
+
+* only chnage 9 and implicitly empty (i.e. "") to NA and encode with DDI
+
+* and at this point, create new vars, homologating gru_san into the post 2007
+  vars idfactorrh and idhemoclas. Here's the unique values of those columns, 
+  so you basically need to extract what is within the parenthesis from column gru_san
+  and separate that into factorrh and hemoclas
+* idfactorrh: "Negativo" "Positivo"
+* idhemoclas: "O"  "B"  "A"  "AB"
+* gru_san: "O+ (O positivo)"   "O- (O negativo)"   "AB+ (AB positivo)" 
+  "A+ (A positivo)"   "A- (A negativo)"   "B+ (B positivo)"   "AB- (AB negativo)" 
+  "B- (B negativo)" 
+
+
+```{r results="asis"}
+being_checked <- c("idpertet", "idpuebloin")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- idpertet available from 2008 until 2016, values and DDI consistent
+- idpertet available from 2017 on, DDI consistent except for missing
+  2018, and values consistent, except that the numeric encoded years do
+  not have the 9 missing value (just missing?)
+
+* make 9 to NAs and encode each with DDI
+
+
+```{r results="asis"}
+being_checked <- c("mes")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- values and DDI ok, but let's keep just the number
+
+* make it numeric (or factor?)
+
+```{r results="asis"}
+being_checked <- c("mul_parto")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- All values and DDI consistent
+
+* 9 -> NA and encode DDI
+
+```{r results="asis"}
+being_checked <- c("n_emb", "n_hijosv")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- Values seem ok, DDI only indicidate 99 as sin información
+
+* 99 -> NA and keep it as numeric
+
+
+```{r results="asis"}
+being_checked <- c("niv_edum", "niv_edup")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- categories changed in 2008, but otherwise values and DDI consistent
+
+Categories pre 2008
+    1       Preescolar
+    2       Primaria completa
+    3       Primaria incompleta
+    4       Secundaria completa
+    5       Secundaria incompleta
+    6       Universitaria completa
+    7       Universitaria incompleta
+    8       Ninguno
+    9       Sin información
+
+Categories from 2008 on
+    01      Preescolar
+    02      Básica primaria
+    03      Básica secundaria        
+    04      Media académica o clásica
+    05      Media técnica
+    06      Normalista
+    07      Técnica profesional
+    08      Tecnológica
+    09      Profesional
+    10      Especialización
+    11      Maestría
+    12      Doctorado
+    13      Ninguno
+    99      Sin información
+
+
+* rename to old and new, to keep both encodings separated
+* TODO: perhaps homologate to get a whole?
+
+```{r results="asis"}
+being_checked <- c("nom_inst", "nomclasad", "otro_sit", "otrparatx")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- these are mostly character vectors with many values
+
+* just keep them as character
+
+
+```{r results="asis"}
+being_checked <- c("numconsul")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- consistent values, 99 sin información
+
+* keep it numeric and 99 -> NA
+
+```{r results="asis"}
+being_checked <- c("peso_nac")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- consistent values and DDI categories throughout
+
+* 9 -> NA and encode with DDI
+
+
+```{r results="asis"}
+being_checked <- c("profesion")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- categories changed in 2008
+- but otherwise values and DDI categories are consistent throughout
+
+* create profesion_old and profesion_new, replacein 9 -> NA and encoding DDI
+* TODO: should we create a profesion_homo?, perhaps merging enfermería?
+
+
+```{r results="asis"}
+being_checked <- c("seg_social")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- categories changed in 2008
+- but otherwise values and DDI categories are consistent throughout
+
+* create _old and _new, replacein 9 -> NA and encoding DDI
+* TODO: should we also change "6: Ignorado" to NA, in the pre-2008 data?
+* TODO: should we create a _homo?
+
+```{r results="asis"}
+being_checked <- c("sexo")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- categories changed in 2014, introducing sexo: indeterminado
+- but otherwise values and DDI categories are consistent throughout
+
+* keep only variable sexo, but encode all of them with 2014 DDI
+
+
+```{r results="asis"}
+being_checked <- c("sit_parto")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- all values and DDI categories are consistent throughout
+
+* just 9 -> NA and encode DDI
+
+
+```{r results="asis"}
+being_checked <- c("t_ges")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- all values and DDI categories are consistent throughout
+
+* just 9 -> NA and encode DDI
+
+```{r results="asis"}
+being_checked <- c("talla_nac")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- all values and DDI categories are consistent throughout
+
+* just 9 -> NA and encode DDI
+
+
+```{r results="asis"}
+being_checked <- c("tipo_parto")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- all values and DDI categories are consistent throughout
+
+* just 9 -> NA and encode DDI
+
+
+```{r results="asis"}
+being_checked <- c("ultcurmad", "ultcurpad")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+- DDI only has category 99: sin información
+
+* make it a numeric and replace 99 -> NA
+
+
+## Vars pending screening
+```{r}
+vars_info$var_names |>
+  unique() |>
+  setdiff(already_checked) |>
+  sort()
+```
+
+
+
+# TODO 
+do date later
+
+```{r results="asis"}
+being_checked <- c("fecha_nacm")
+already_checked <- c(already_checked, being_checked)
+cat("## ", being_checked)
+```
+
+```{r results="asis"}
+nac_raw |>
+  filter(year == 2019) |>
+  pull(sav_data) |>
+  first() |>
+  pull(fecha_nacm) |>
+  glimpse() |>
+  identity()
+```
+
+
+
+

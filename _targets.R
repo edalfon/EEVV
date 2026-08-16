@@ -1,5 +1,11 @@
+tar_option_set(
+  packages = c("daner"),
+  imports = c("daner")
+)
+
 list(
-  tar_target(toy_data, mtcars),
-  tar_target(fake_data, data.frame(x = runif(100))),
-  flowme::tar_bookdown("report")
+  plan_ingest_eevv(),
+  plan_ingest_nac(),
+  # flowme::tar_bookdown("report"),
+  NULL
 )
