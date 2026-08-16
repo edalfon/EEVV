@@ -15,9 +15,19 @@ plan_ingest_defun_nofetal <- function() {
     # homologate variables of interest, when their coding has changed over time
     tar_target(vars_info_defun_nofetal, check_vars(defun_nofetal_raw)),
     tar_render(inspect_vars_info_defun_nofetal, "notebooks/inspect_vars_info_defun_nofetal.Rmd"),
-    tar_render(inspect_ddi_vars_defun_nofetal, "notebooks/inspect_ddi_vars_defun_nofetal.Rmd")
+    tar_render(inspect_ddi_vars_defun_nofetal, "notebooks/inspect_ddi_vars_defun_nofetal.Rmd"),
 
-    # TODO once the notebooks above have been reviewed: homologate_vars_defun_nofetal()
-    # and select_defun_nofetal_vars(), mirroring homologate_vars()/select_nac_vars()
+    # homologate variables of interest (ddi_nac_vars used as a fallback for
+    # the handful of variables undocumented in this dataset's own DDI)
+    tar_qs(
+      defun_nofetal_homo,
+      homologate_vars_defun_nofetal(defun_nofetal_raw, ddi_defun_nofetal_vars, ddi_nac_vars)
+    ),
+
+    # select final variables, unnest and row bind the data
+    tar_parquet(
+      defun_nofetal,
+      select_defun_nofetal_vars(defun_nofetal_homo, ddi_defun_nofetal_var_labels)
+    )
   )
 }
