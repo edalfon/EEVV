@@ -59,7 +59,13 @@ ingest_eevv_ddi <- function() {
     purrr::map_dfr(xml_urls, daner::list_ddi_files, .id = "xml") |>
     # for the moment, we only want to keep the files related to nacimientos
     # and not those for mortalidad fetal o nofetal
-    filter(str_detect(uri, regex("Name=nac", ignore_case = TRUE))) |>
+    # note: from 2024 on, DANE renamed the file to e.g.
+    # "Name=BD-EEVV-Nacimientos-2024" instead of the "Name=nac2024" pattern
+    # used in previous years, hence matching on "nacimientos" too
+    filter(str_detect(
+      uri,
+      regex("Name=nac|nacimientos", ignore_case = TRUE)
+    )) |>
     mutate(year = str_sub(uri, start = -4))
 
   testthat::expect_true(all(count(ddi_nac_files, id, xml)$n == 1))
