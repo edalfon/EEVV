@@ -16,6 +16,9 @@ plan_ingest_eevv <- function() {
     # homologate variables of interest, when their coding has changed over time
     tar_target(vars_info, check_vars(nac_raw)),
     tar_render(inspect_vars_info, "notebooks/inspect_vars_info.Rmd"),
+    tar_render(inspect_ddi_vars, "notebooks/inspect_ddi_vars.Rmd"),
+
+    # homologate variables of interest
     tar_qs(nac_homo, homologate_vars(nac_raw, ddi_nac_vars, inspect_vars_info)),
 
     # select final variables for the NAC dataset, unnest and row bind the data
