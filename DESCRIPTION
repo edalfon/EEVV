@@ -13,3 +13,14 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
+Imports: 
+    daner (>= 0.0.2),
+    dplyr,
+    fs,
+    ggplot2,
+    haven,
+    qs2,
+    tarchetypes,
+    targets
+Remotes:  
+    edalfon/daner
