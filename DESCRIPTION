@@ -19,8 +19,9 @@ Imports:
     fs,
     ggplot2,
     haven,
+    janitor,
     qs2,
     tarchetypes,
     targets
-Remotes:  
+Remotes: 
     edalfon/daner
