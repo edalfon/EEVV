@@ -1,0 +1,249 @@
+---
+title: "Inspect DDI variables over time - Defunciones No Fetales"
+output:
+  html_notebook:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+```{r}
+ddi_defun_nofetal_vars <- tar_read(ddi_defun_nofetal_vars)
+```
+
+While `inspect_vars_info_defun_nofetal.Rmd` looks at the data *as ingested*
+from the .sav files (`defun_nofetal_raw`), this notebook looks at the
+*documented* metadata, i.e. the DDI codebooks (`ddi_defun_nofetal_vars`),
+for Defunciones No Fetales (non-fetal/general deaths). The DDI is what
+tells us how a variable is supposed to be encoded (its measurement type,
+its label, and the value/label pairs for its categories), independently of
+whatever ended up in the actual data file for a given year. Here we want
+to answer:
+
+* which variables does DANE actually document, and in which years
+* does a variable's measurement type (`intrvl`) or label text stay stable
+  over time
+* how many categories does each variable have per year, and does the DDI
+  actually include a label for each of them (some years/variables only
+  document the codes, not the labels -- this is what broke DDI ingestion for
+  2023/2024, see `ingest_eevv_ddi.R`)
+* for variables with a manageable number of categories, which codes are
+  added/dropped over time, and does the label text for the same code drift
+  (spelling, accents, rewording) across years
+
+```{r}
+ddi_summary <- ddi_defun_nofetal_vars |>
+  mutate(
+    n_categories = purrr::map_int(catgry, nrow),
+    n_missing_label = purrr::map_int(catgry, \(x) sum(is.na(x$labl))),
+    pct_missing_label = dplyr::if_else(
+      n_categories > 0, n_missing_label / n_categories, NA_real_
+    )
+  )
+```
+
+# Coverage: variables documented per year
+
+```{r}
+ddi_summary |>
+  group_by(year) |>
+  summarize(
+    n_vars = n(),
+    n_vars_with_categories = sum(n_categories > 0),
+    .groups = "drop"
+  ) |>
+  tidyr::pivot_longer(starts_with("n_vars"), names_to = "metric") |>
+  ggplot(aes(x = year, y = value, color = metric, group = metric)) +
+  geom_line() +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = -45, hjust = 0), legend.position = "bottom")
+```
+
+The DDI does not document the same variables every year (some variables
+were only introduced, renamed or dropped at some point -- e.g. this dataset
+carries the cause-of-death variables, which are a whole subject of their
+own). The next heatmap shows, for every variable/year combination, how many
+categories the DDI documents for it (darker/lighter = more/fewer
+categories; grey = the variable simply isn't documented that year).
+
+```{r fig.height=14}
+plotly::ggplotly(
+  ddi_summary |>
+    ggplot(aes(
+      x = year, y = name, fill = n_categories,
+      text = glue::glue(
+        "\n",
+        "intrvl: {intrvl}",
+        "label: {labl}",
+        "n_categories: {n_categories}",
+        "n_missing_label: {n_missing_label}",
+        .sep = "\n"
+      )
+    )) +
+    geom_tile() +
+    scale_fill_viridis_c(trans = "log1p", na.value = "grey90")
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+# Measurement type (`intrvl`) over time
+
+```{r fig.height=14}
+plotly::ggplotly(
+  ddi_summary |>
+    ggplot(aes(
+      x = year, y = name, fill = intrvl,
+      text = glue::glue(
+        "\n",
+        "intrvl: {intrvl}",
+        "label: {labl}",
+        .sep = "\n"
+      )
+    )) +
+    geom_tile()
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+Variables whose `intrvl` is not the same across every year they appear in
+(worth a manual look, a future `homologate_vars_defun_nofetal()` may need
+to cast them explicitly):
+
+```{r}
+ddi_summary |>
+  group_by(name) |>
+  summarize(
+    n_types = n_distinct(intrvl, na.rm = TRUE),
+    types = paste(sort(unique(intrvl)), collapse = ", "),
+    years = paste(sort(unique(year)), collapse = ", "),
+    .groups = "drop"
+  ) |>
+  filter(n_types > 1) |>
+  DT::datatable()
+```
+
+# Variable label (`labl`) consistency over time
+
+The variable label is free text, so it is expected to drift a bit (accents,
+capitalization). Still, worth a look to catch actual renames (a variable
+being repurposed) as opposed to just cosmetic differences. This is the same
+kind of check `get_var_labels_only()` already does to pick one label per
+variable; here we show the years in which each wording was used.
+
+```{r}
+label_changes <- ddi_summary |>
+  group_by(name) |>
+  summarize(n_labels = n_distinct(labl), .groups = "drop") |>
+  filter(n_labels > 1)
+
+ddi_summary |>
+  semi_join(label_changes, by = "name") |>
+  group_by(name, labl) |>
+  summarize(years = paste(sort(unique(year)), collapse = ", "), .groups = "drop") |>
+  arrange(name) |>
+  DT::datatable()
+```
+
+# Missing category labels
+
+Some years document the category *codes* for a variable but not their
+*labels* (`catValu` without a `labl`) -- this is what made DDI ingestion of
+2023/2024 fail in the first place (see `ingest_eevv_ddi.R` /
+`daner::get_var_categories()`), and it is worth monitoring going forward,
+since it silently limits what `encode_ddi_factor()` can do with that
+year/variable. The heatmap below shows the share of categories missing a
+label (0% = fully labeled, white = no categories documented at all).
+
+```{r fig.height=14}
+plotly::ggplotly(
+  ddi_summary |>
+    filter(n_categories > 0) |>
+    ggplot(aes(
+      x = year, y = name, fill = pct_missing_label,
+      text = glue::glue(
+        "\n",
+        "n_categories: {n_categories}",
+        "n_missing_label: {n_missing_label}",
+        .sep = "\n"
+      )
+    )) +
+    geom_tile() +
+    scale_fill_viridis_c(limits = c(0, 1), labels = scales::percent)
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+# Category codes over time (small code lists)
+
+Large code lists (cause-of-death codes and the like) are impractical to
+inspect one tile at a time, so this section focuses on variables with a
+manageable number of categories (at most 15, across all years combined),
+which is where genuinely interesting encoding changes tend to happen (e.g. a
+new category introduced, an old one retired, a "sin información" code
+appearing/disappearing).
+
+```{r results="asis"}
+small_vars <- ddi_summary |>
+  group_by(name) |>
+  summarize(max_n = max(n_categories), .groups = "drop") |>
+  filter(max_n > 0, max_n <= 15) |>
+  arrange(name) |>
+  pull(name)
+
+catgry_small <- ddi_defun_nofetal_vars |>
+  filter(name %in% small_vars) |>
+  select(name, year, catgry) |>
+  tidyr::unnest(catgry)
+
+purrr::walk(small_vars, function(v) {
+  cat("## ", v, "\n\n")
+
+  p <- catgry_small |>
+    filter(name == v) |>
+    ggplot(aes(
+      x = year, y = catValu, fill = catValu,
+      text = glue::glue("labl: {labl}")
+    )) +
+    geom_tile() +
+    theme(legend.position = "none")
+
+  print(htmltools::tagList(
+    plotly::ggplotly(p) |>
+      plotly::layout(xaxis = list(title = NA, tickangle = -45))
+  ))
+
+  cat("\n\n")
+})
+```
+
+# Category label drift for persisting codes
+
+For a code (`catValu`) that shows up in more than one year for the same
+variable, does its label text actually stay the same? Small wording/accent
+differences are expected and harmless; a code being re-labelled to mean
+something substantively different is the thing worth catching here.
+
+```{r}
+ddi_defun_nofetal_vars |>
+  select(name, year, catgry) |>
+  tidyr::unnest(catgry) |>
+  filter(!is.na(labl)) |>
+  group_by(name, catValu) |>
+  summarize(
+    n_distinct_labl = n_distinct(labl),
+    labels = paste(unique(labl), collapse = " | "),
+    years = paste(sort(unique(year)), collapse = ", "),
+    .groups = "drop"
+  ) |>
+  filter(n_distinct_labl > 1) |>
+  arrange(name, catValu) |>
+  DT::datatable()
+```

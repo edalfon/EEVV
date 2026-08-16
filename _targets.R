@@ -5,6 +5,8 @@ tar_option_set(
 
 list(
   plan_ingest_eevv(),
+  plan_ingest_defun_fetal(),
+  plan_ingest_defun_nofetal(),
   # flowme::tar_bookdown("report"),
   NULL
 )

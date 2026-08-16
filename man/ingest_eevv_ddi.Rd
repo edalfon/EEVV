@@ -2,13 +2,23 @@
 % Please edit documentation in R/ingest_eevv_ddi.R
 \name{ingest_eevv_ddi}
 \alias{ingest_eevv_ddi}
-\title{Ingest EEVV Nacimientos DDI information}
+\title{Ingest EEVV DDI information}
 \usage{
-ingest_eevv_ddi()
+ingest_eevv_ddi(dataset = c("nacimientos", "fetal", "nofetal"))
+}
+\arguments{
+\item{dataset}{which EEVV dataset to get DDI metadata for: "nacimientos",
+"fetal" (defunciones fetales) or "nofetal" (defunciones no fetales).
+Naming of the underlying files is not fully consistent across years (e.g.
+the general/non-fetal deaths file is called "Defunciones"/"Defun_" until
+2015 and "Nofetal_"/"nofetal" from 2016 on; "fetal" is always used for
+fetal deaths, including as part of "nofetal", hence the more careful
+pattern used here for "nofetal": match "nofetal" itself, or match
+"Defun" while explicitly NOT matching "fetal").}
 }
 \value{
-A data frame containing information about variables from
-Nacimientos in DDI files. The data frame includes:
+A data frame containing information about variables from the
+selected dataset in DDI files. The data frame includes:
 \itemize{
 \item \code{xml}: Character vector indicating the source XML file for each variable.
 \item \code{id}: Character vector containing the variable ID extracted from the DDI document.
@@ -26,8 +36,12 @@ the dataframe has columns catValu and labl
 }
 \description{
 This function retrieves information about variables related to
-births ("Nacimientos") from DANE's EEVV, using the DDI XML files.
-Heavy lifting via \code{daner::list_ddi_files} and \code{daner::get_ddi_vars}
+"Nacimientos" (births), "Defunciones fetales" (fetal deaths) or
+"Defunciones no fetales" (non-fetal/general deaths) from DANE's EEVV,
+using the DDI XML files. Heavy lifting via \code{daner::list_ddi_files} and
+\code{daner::get_ddi_vars}. The three datasets share the same DDI XML files
+(one per year/period, listing all three file types together), so this
+function only needs to change which files it keeps.
 }
 \details{
 But why doing this?, well, DANE's data do not always come with all

@@ -1,8 +1,12 @@
-#' Ingest EEVV Nacimientos DDI information
+#' Ingest EEVV DDI information
 #'
 #' This function retrieves information about variables related to
-#' births ("Nacimientos") from DANE's EEVV, using the DDI XML files.
-#' Heavy lifting via `daner::list_ddi_files` and `daner::get_ddi_vars`
+#' "Nacimientos" (births), "Defunciones fetales" (fetal deaths) or
+#' "Defunciones no fetales" (non-fetal/general deaths) from DANE's EEVV,
+#' using the DDI XML files. Heavy lifting via `daner::list_ddi_files` and
+#' `daner::get_ddi_vars`. The three datasets share the same DDI XML files
+#' (one per year/period, listing all three file types together), so this
+#' function only needs to change which files it keeps.
 #'
 #' But why doing this?, well, DANE's data do not always come with all
 #' the variables encoding information. Although some of the .sav or .dta
@@ -12,8 +16,17 @@
 #' from the DDI. In particular, we want the variable labels and the
 #' categories encoding (value/label pairs).
 #'
-#' @return A data frame containing information about variables from
-#' Nacimientos in DDI files. The data frame includes:
+#' @param dataset which EEVV dataset to get DDI metadata for: "nacimientos",
+#' "fetal" (defunciones fetales) or "nofetal" (defunciones no fetales).
+#' Naming of the underlying files is not fully consistent across years (e.g.
+#' the general/non-fetal deaths file is called "Defunciones"/"Defun_" until
+#' 2015 and "Nofetal_"/"nofetal" from 2016 on; "fetal" is always used for
+#' fetal deaths, including as part of "nofetal", hence the more careful
+#' pattern used here for "nofetal": match "nofetal" itself, or match
+#' "Defun" while explicitly NOT matching "fetal").
+#'
+#' @return A data frame containing information about variables from the
+#' selected dataset in DDI files. The data frame includes:
 #'
 #' * `xml`: Character vector indicating the source XML file for each variable.
 #' * `id`: Character vector containing the variable ID extracted from the DDI document.
@@ -31,7 +44,9 @@
 #' @seealso `daner::list_ddi_files`, `daner::get_ddi_vars`
 #'
 #' @export
-ingest_eevv_ddi <- function() {
+ingest_eevv_ddi <- function(dataset = c("nacimientos", "fetal", "nofetal")) {
+  dataset <- match.arg(dataset)
+
   # again, this only to take a look at the files, but let's
   # keep the list of xml files manually curated
   fs::dir_ls("data/EEVV", recurse = TRUE, regexp = "*.xml", ignore.case = TRUE)
@@ -55,29 +70,36 @@ ingest_eevv_ddi <- function() {
   )
   xml_urls <- rlang::set_names(xml_urls, fs::path_file(xml_urls))
 
-  ddi_nac_files <-
+  ddi_files <-
     purrr::map_dfr(xml_urls, daner::list_ddi_files, .id = "xml") |>
-    # for the moment, we only want to keep the files related to nacimientos
-    # and not those for mortalidad fetal o nofetal
-    # note: from 2024 on, DANE renamed the file to e.g.
-    # "Name=BD-EEVV-Nacimientos-2024" instead of the "Name=nac2024" pattern
-    # used in previous years, hence matching on "nacimientos" too
-    filter(str_detect(
-      uri,
-      regex("Name=nac|nacimientos", ignore_case = TRUE)
-    )) |>
+    # for the moment, we only want to keep the files related to `dataset`
+    # note: from 2024 on, DANE renamed the files to e.g.
+    # "Name=BD-EEVV-Nacimientos-2024"/"Name=BD-EEVV-Defuncionesfetales-2024"
+    # instead of the "Name=nac2024"/"Name=fetal2024" pattern used before
+    filter(
+      if (dataset == "nacimientos") {
+        str_detect(uri, regex("Name=nac|nacimientos", ignore_case = TRUE))
+      } else if (dataset == "fetal") {
+        # "fetal" but not as part of "nofetal"
+        str_detect(uri, regex("(?<!no)fetal", ignore_case = TRUE))
+      } else {
+        str_detect(uri, regex("nofetal", ignore_case = TRUE)) |
+          (str_detect(uri, regex("defun", ignore_case = TRUE)) &
+            !str_detect(uri, regex("(?<!no)fetal", ignore_case = TRUE)))
+      }
+    ) |>
     mutate(year = str_sub(uri, start = -4))
 
-  testthat::expect_true(all(count(ddi_nac_files, id, xml)$n == 1))
+  testthat::expect_true(all(count(ddi_files, id, xml)$n == 1))
 
-  ddi_nac_vars <- purrr::map_dfr(xml_urls, daner::get_ddi_vars, .id = "xml") |>
-    left_join(ddi_nac_files, by = c("files" = "id", "xml" = "xml")) |>
-    # and we also want to keep for the moment, only the vars from nacimientos
+  ddi_vars <- purrr::map_dfr(xml_urls, daner::get_ddi_vars, .id = "xml") |>
+    left_join(ddi_files, by = c("files" = "id", "xml" = "xml")) |>
+    # and we also want to keep for the moment, only the vars from `dataset`
     filter(!is.na(year)) |>
     mutate(name = str_to_lower(name))
 
   # variable name and year should be a unique key, and so will be used
-  testthat::expect_true(all(count(ddi_nac_vars, name, year)$n == 1))
+  testthat::expect_true(all(count(ddi_vars, name, year)$n == 1))
 
-  ddi_nac_vars
+  ddi_vars
 }

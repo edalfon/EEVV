@@ -1,0 +1,121 @@
+---
+title: "Inspect vars info over time - Defunciones No Fetales"
+output:
+  html_notebook:
+    code_folding: hide
+---
+
+```{r}
+vars_info_defun_nofetal <- tar_read(vars_info_defun_nofetal)
+```
+
+```{r results="asis"}
+defun_nofetal_raw <- tar_read(defun_nofetal_raw)
+```
+
+Mirrors `inspect_vars_info.Rmd` (written for Nacimientos), but for
+Defunciones No Fetales (non-fetal/general deaths). To quickly visuallize
+what has changed, we'll take a look at a few plots that show i) which
+variables exist in which years and ii) how are those variables encoded
+(class, type and unique values). This is an input to individually decide
+what to do with each variable (e.g. include/exclude, how to homologate
+them when categories have changed). See also
+`inspect_ddi_vars_defun_nofetal.Rmd` for the equivalent analysis based on
+the DDI codebooks rather than the raw ingested data.
+
+# Data as Ingested
+
+```{r}
+plotly::ggplotly(
+  vars_info_defun_nofetal |>
+    mutate(value = 1) |>
+    ggplot(aes(x = year, y = var_names, fill = value, text = glue::glue(
+      "\n",
+      "var_class: {var_class}",
+      "var_type: {var_type}",
+      "var_unique: {var_unique}",
+      .sep = "\n"
+    ))) +
+    geom_tile() +
+    theme(legend.position = "none")
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+```{r}
+plotly::ggplotly(
+  vars_info_defun_nofetal |>
+    ggplot(aes(x = year, y = var_names, fill = var_class, text = glue::glue(
+      "\n",
+      "var_class: {var_class}",
+      "var_type: {var_type}",
+      "var_unique: {var_unique}",
+      .sep = "\n"
+    ))) +
+    geom_tile()
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+```{r}
+plotly::ggplotly(
+  vars_info_defun_nofetal |>
+    ggplot(aes(x = year, y = var_names, fill = var_type, text = glue::glue(
+      "\n",
+      "var_class: {var_class}",
+      "var_type: {var_type}",
+      "var_unique: {var_unique}",
+      .sep = "\n"
+    ))) +
+    geom_tile()
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+```{r}
+plotly::ggplotly(
+  vars_info_defun_nofetal |>
+    ggplot(aes(x = year, y = var_names, fill = var_unique, text = glue::glue(
+      "\n",
+      "var_class: {var_class}",
+      "var_type: {var_type}",
+      "var_unique: {var_unique}",
+      .sep = "\n"
+    ))) +
+    geom_tile() +
+    theme(legend.position = "none")
+) |>
+  plotly::layout(
+    legend = list(orientation = "h"), xaxis = list(title = NA, tickangle = -45)
+  )
+```
+
+# Checking vars
+
+Nothing has been individually reviewed yet for this dataset (unlike
+Nacimientos' `inspect_vars_info.Rmd`, which documents, variable by
+variable, the homologation decisions behind `homologate_vars()`). The list
+below is meant as the starting point for that same exercise here: for each
+variable, look at the plots above (and at `inspect_ddi_vars_defun_nofetal.Rmd`)
+and decide whether/how to homologate it, then move its name from
+"pending" to a `## variable_name` subsection documenting the decision,
+mirroring `inspect_vars_info.Rmd`.
+
+```{r}
+already_checked <- c()
+```
+
+## Vars pending screening
+
+```{r}
+vars_info_defun_nofetal$var_names |>
+  unique() |>
+  setdiff(already_checked) |>
+  sort()
+```
