@@ -1,4 +1,4 @@
-plan_ingest_eevv <- function() {
+plan_ingest_nac <- function() {
   tarchetypes::tar_plan(
     # breathe
 
@@ -25,10 +25,5 @@ plan_ingest_eevv <- function() {
     tar_parquet(nac, select_nac_vars(nac_homo, ddi_nac_var_labels)),
     # tar_qs(nac_qs, nac),
     # tar_fst(nac_fst, nac),
-
-    # playground
-    tar_target(playground, cue = tar_cue("never"), {
-      tar_cancel()
-    })
   )
 }
