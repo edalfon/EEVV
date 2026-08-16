@@ -27,7 +27,12 @@
 #' @export
 ingest_eevv_nac <- function() {
   # just to  take a look at all files. Do not read them all, though
-  fs::dir_ls("data/EEVV", recurse = TRUE, regexp = ".*nac.*.zip", ignore.case = TRUE)
+  fs::dir_ls(
+    "data/EEVV",
+    recurse = TRUE,
+    regexp = ".*nac.*.zip",
+    ignore.case = TRUE
+  )
 
   # Rather manually make a decision which files should we include
   nac_zip_files <- c(
@@ -51,7 +56,9 @@ ingest_eevv_nac <- function() {
     `2019` = "data/EEVV/2019/nac2019.zip", # manually unzipped zip of zip
     `2020` = "data/EEVV/2020/nac2020.zip",
     `2021` = "data/EEVV/2021/nacimientos2021.zip",
-    `2022` = "data/EEVV/2022/nac2022.zip"
+    `2022` = "data/EEVV/2022/nac2022.zip",
+    `2023` = "data/EEVV/2023/BD-EEVV-Nacimientos-2023.zip",
+    `2024` = "data/EEVV/2024/BD-EEVV-Nacimientos-2024.zip"
   )
 
   nac_raw <-

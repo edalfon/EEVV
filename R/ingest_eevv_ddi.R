@@ -49,7 +49,9 @@ ingest_eevv_ddi <- function() {
     "data/EEVV/2019/DANE-DCD-EEVV-2019.xml",
     "data/EEVV/2020/DANE-DCD-EEVV-2020.xml",
     "data/EEVV/2021/COL-DANE-EEVV-2021.xml",
-    "data/EEVV/2022/COL-DANE-EEVV-2022.xml"
+    "data/EEVV/2022/COL-DANE-EEVV-2022.xml",
+    "data/EEVV/2023/COL-DANE-EEVV-2023.xml",
+    "data/EEVV/2024/COL-DANE-EEVV-2024.xml"
   )
   xml_urls <- rlang::set_names(xml_urls, fs::path_file(xml_urls))
 
