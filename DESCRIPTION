@@ -1,6 +1,6 @@
 Package: EEVV
 Title: Ingest and Harmonize Colombia's Vital Statistics (EEVV) Data
-Version: 0.0.0.9000
+Version: 1.0.0
 Authors@R:
     person("Eduardo", "Alfonso-Sierra", , "edalfon@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-6430-5135"))
