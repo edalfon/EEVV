@@ -1,2 +1,5 @@
 # I guess we shouldn't share DANE's data but can be downloaded
-EEVV/**
+EEVV/**/*.zip
+EEVV/**/*.xml
+EEVV/**/*.pdf
+EEVV/**/*.docx
