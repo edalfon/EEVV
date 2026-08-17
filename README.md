@@ -9,12 +9,22 @@ using DDI metadata to recover labels where the raw files lack them.
 
 ## Data
 
-Raw data is not included in this repo. Download the yearly `.sav`
-microdata files (and DDI `.xml` codebooks) from DANE
-(<https://www.dane.gov.co>, under Estadísticas Vitales) and place them
-under `data/EEVV/<period>/`, matching the paths hard-coded in
-`R/ingest_eevv_nac.R`, `R/ingest_eevv_defun_fetal.R`, and
-`R/ingest_eevv_defun_nofetal.R`.
+Raw data is not included in this repo, and neither is this code's
+processed output: DANE's terms of use prohibit redistributing their data
+to multiple users without DANE's prior written approval, so this applies
+to both the raw microdata and the compiled/homologated datasets this
+pipeline produces. You need to download the yearly `.sav` microdata files
+(and DDI `.xml` codebooks) from DANE
+(<https://microdatos.dane.gov.co>, under Estadísticas Vitales) yourself,
+place them under `data/EEVV/<period>/` (see `data/README.md`), matching
+the paths hard-coded in `R/ingest_eevv_nac.R`,
+`R/ingest_eevv_defun_fetal.R`, and `R/ingest_eevv_defun_nofetal.R`, and
+run the pipeline to get the processed datasets.
+
+Any use of DANE's data requires this citation:
+
+> Fuente: Departamento Administrativo Nacional de Estadística - DANE:
+> www.dane.gov.co
 
 ## Running the pipeline
 

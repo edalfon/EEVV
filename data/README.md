@@ -12,3 +12,12 @@ and DDI `.xml` codebook from there, and keep the same folder layout
 DANE ships them in -- the file paths are hard-coded in
 `R/ingest_eevv_nac.R`, `R/ingest_eevv_defun_fetal.R`, and
 `R/ingest_eevv_defun_nofetal.R`.
+
+DANE's terms of use prohibit redistributing their data to multiple users
+without prior written approval from DANE -- this applies to the raw
+files above, and equally to this code's *output* (the compiled/
+homologated `nac`/`defun_fetal`/`defun_nofetal` datasets). So neither
+the raw data nor the processed output can be shared publicly (e.g.
+committed to this repo, or published elsewhere): each user needs to
+download the raw data from DANE themselves and run the pipeline to get
+the processed datasets.
