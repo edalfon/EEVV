@@ -17,20 +17,25 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en
 Roxygen: list(markdown = TRUE)
-Suggests: 
-    testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
-Imports: 
+Imports:
     arrow,
     daner (>= 0.0.2),
     dplyr,
+    DT,
     fs,
     ggplot2,
     haven,
     janitor,
+    purrr,
     qs2,
+    rlang,
+    stringr,
     tarchetypes,
-    targets
+    targets,
+    testthat (>= 3.0.0),
+    tidyr,
+    vctrs
 Remotes: 
     edalfon/daner
