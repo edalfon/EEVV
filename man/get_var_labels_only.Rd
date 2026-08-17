@@ -21,5 +21,5 @@ This function makes just that, by aggregating the data in ddi_nac_vars
 to select only one label per variable name and return it as a
 named character vector, where the name if the variable name and
 the value is the label. Thus, it can be conveniently queried like
-ddi_nac_var_labels\link{varname} to obtain the label associated to varname.
+\code{ddi_nac_var_labels[varname]} to obtain the label associated to \code{varname}.
 }

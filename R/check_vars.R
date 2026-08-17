@@ -1,9 +1,22 @@
-#' kda fhkjlha sdfjkha sf
+#' Summarize each variable's class, type, and unique values across years
 #'
-#' .. content for \details{} ..
+#' Takes the nested-by-year raw data as returned by `ingest_eevv_nac()` (or
+#' the analogous `ingest_eevv_defun_fetal()`/`ingest_eevv_defun_nofetal()`),
+#' and produces one row per (bundle/year, variable) summarizing its R class,
+#' storage type, and, for low-cardinality variables (fewer than 35 distinct
+#' values), the distinct values themselves. This is meant to be inspected
+#' (e.g. via `inspect_vars_info*.Rmd`) to spot where a variable's coding
+#' changed across years, ahead of homologating it in `homologate_vars()` /
+#' `homologate_vars_defun()`.
 #'
-#' @param nac_raw
-#' @return
+#' @param nac_raw a data frame with nested `sav_data`, as returned by
+#' `ingest_eevv_nac()`, `ingest_eevv_defun_fetal()`, or
+#' `ingest_eevv_defun_nofetal()`
+#' @return a data frame with one row per (bundle/year, variable), including
+#' `var_class`, `var_type`, `var_nuniq`, and `var_unique` columns (the
+#' latter two collapsed to a printable string), and without the original
+#' `sav_data` column
+#' @seealso `homologate_vars`, `homologate_vars_defun`
 #' @export
 check_vars <- function(nac_raw) {
   vars_info <- nac_raw |>

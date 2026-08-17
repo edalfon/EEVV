@@ -1,3 +1,22 @@
+#' {targets} plan: ingest, homologate, and compile Nacimientos
+#'
+#' Defines the sequence of `targets` for the Nacimientos (births) dataset:
+#' ingest the raw yearly `.sav` files (`ingest_eevv_nac()`), ingest the
+#' corresponding DDI variable metadata (`ingest_eevv_ddi()`), summarize
+#' each variable's coding across years (`check_vars()`, rendered via the
+#' `inspect_vars_info.Rmd`/`inspect_ddi_vars.Rmd` notebooks) so that
+#' coding changes can be reviewed before homologating, homologate the
+#' variables of interest (`homologate_vars()`), and finally select/unnest
+#' the homologated variables into the final `nac` table
+#' (`select_nac_vars()`), written out as parquet.
+#'
+#' Called from `_targets.R`; mirrors `plan_ingest_defun_fetal()` and
+#' `plan_ingest_defun_nofetal()` for the Defunciones datasets.
+#'
+#' @return a list of `targets` target objects, as built by
+#' `tarchetypes::tar_plan()`
+#' @seealso `plan_ingest_defun_fetal`, `plan_ingest_defun_nofetal`
+#' @noRd
 plan_ingest_nac <- function() {
   tarchetypes::tar_plan(
     # breathe

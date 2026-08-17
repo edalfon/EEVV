@@ -1,3 +1,25 @@
+#' {targets} plan: ingest, homologate, and compile Defunciones No Fetales
+#'
+#' Defines the sequence of `targets` for the Defunciones No Fetales
+#' (general deaths) dataset: ingest the raw yearly `.sav` files
+#' (`ingest_eevv_defun_nofetal()`), ingest the corresponding DDI variable
+#' metadata (`ingest_eevv_ddi("nofetal")`), summarize each variable's
+#' coding across years (`check_vars()`, rendered via the
+#' `inspect_vars_info_defun_nofetal.Rmd`/`inspect_ddi_vars_defun_nofetal.Rmd`
+#' notebooks), homologate the variables of interest
+#' (`homologate_vars_defun_nofetal()`, using `ddi_nac_vars` as a fallback
+#' for the handful of variables undocumented in this dataset's own DDI),
+#' and finally select/unnest the homologated variables into the final
+#' `defun_nofetal` table (`select_defun_nofetal_vars()`), written out as
+#' parquet.
+#'
+#' Called from `_targets.R`; mirrors `plan_ingest_nac()` and
+#' `plan_ingest_defun_fetal()`.
+#'
+#' @return a list of `targets` target objects, as built by
+#' `tarchetypes::tar_plan()`
+#' @seealso `plan_ingest_nac`, `plan_ingest_defun_fetal`
+#' @noRd
 plan_ingest_defun_nofetal <- function() {
   tarchetypes::tar_plan(
     # ingest raw data as qs, because ingest_eevv_defun_nofetal() returns data

@@ -7,7 +7,7 @@
 #' to select only one label per variable name and return it as a
 #' named character vector, where the name if the variable name and
 #' the value is the label. Thus, it can be conveniently queried like
-#' ddi_nac_var_labels[varname] to obtain the label associated to varname.
+#' `ddi_nac_var_labels[varname]` to obtain the label associated to `varname`.
 #'
 #' @param ddi_nac_vars A data frame containing DDI metadata as returned by
 #' `ingest_eevv_ddi`.

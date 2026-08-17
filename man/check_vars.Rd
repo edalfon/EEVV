@@ -2,10 +2,31 @@
 % Please edit documentation in R/check_vars.R
 \name{check_vars}
 \alias{check_vars}
-\title{kda fhkjlha sdfjkha sf}
+\title{Summarize each variable's class, type, and unique values across years}
 \usage{
 check_vars(nac_raw)
 }
+\arguments{
+\item{nac_raw}{a data frame with nested \code{sav_data}, as returned by
+\code{ingest_eevv_nac()}, \code{ingest_eevv_defun_fetal()}, or
+\code{ingest_eevv_defun_nofetal()}}
+}
+\value{
+a data frame with one row per (bundle/year, variable), including
+\code{var_class}, \code{var_type}, \code{var_nuniq}, and \code{var_unique} columns (the
+latter two collapsed to a printable string), and without the original
+\code{sav_data} column
+}
 \description{
-.. content for \details{} ..
+Takes the nested-by-year raw data as returned by \code{ingest_eevv_nac()} (or
+the analogous \code{ingest_eevv_defun_fetal()}/\code{ingest_eevv_defun_nofetal()}),
+and produces one row per (bundle/year, variable) summarizing its R class,
+storage type, and, for low-cardinality variables (fewer than 35 distinct
+values), the distinct values themselves. This is meant to be inspected
+(e.g. via \code{inspect_vars_info*.Rmd}) to spot where a variable's coding
+changed across years, ahead of homologating it in \code{homologate_vars()} /
+\code{homologate_vars_defun()}.
+}
+\seealso{
+\code{homologate_vars}, \code{homologate_vars_defun}
 }

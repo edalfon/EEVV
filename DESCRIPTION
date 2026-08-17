@@ -1,10 +1,18 @@
 Package: EEVV
-Title: What the Package Does (One Line, Title Case)
+Title: Ingest and Harmonize Colombia's Vital Statistics (EEVV) Data
 Version: 0.0.0.9000
-Authors@R: 
+Authors@R:
     person("Eduardo", "Alfonso-Sierra", , "edalfon@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-6430-5135"))
-Description: What the package does (one paragraph).
+Description: Downloads, ingests, and harmonizes microdata from Colombia's
+    DANE Estadisticas Vitales (EEVV): Nacimientos (births), Defunciones
+    Fetales (fetal deaths), and Defunciones No Fetales (general deaths).
+    Variable coding is inconsistent across years, so each dataset's
+    variables are individually homologated using DDI metadata (extracted
+    via 'daner') to recover variable and category labels where the raw
+    .sav files lack them, and the resulting datasets are compiled into
+    a single, analysis-ready table per topic. The ingestion pipeline is
+    orchestrated with 'targets'.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en
