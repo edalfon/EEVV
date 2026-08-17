@@ -1,6 +1,0 @@
-*.html
-*.docx
-*.md
-!_style.docx
-_book/
-_bookdown_files/
