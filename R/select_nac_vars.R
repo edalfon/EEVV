@@ -5,6 +5,8 @@
 #' downstream analysis. The nested data frames are then unnested into a
 #' single flat data frame and, since `tidyr::unnest()` drops variable
 #' labels, the labels are re-attached from `ddi_nac_var_labels`.
+#' In addition, any invalid UTF-8 characters in character columns are fixed,
+#' so that downstream loading does not fail.
 #'
 #' @param nac_homo a data frame with homologated nacimientos data, including
 #' a `sav_data` column with nested data frames, as returned by
@@ -62,6 +64,21 @@ select_nac_vars <- function(nac_homo, ddi_nac_var_labels) {
       attr(x, "label") <- ddi_nac_var_labels[cur_column()]
       x
     }))
+
+  # raw saving end's up with file with encoding issues,
+  # so we better fix it so downstream loading does not fail
+  fix_invalid_utf8 <- function(x) {
+    bad <- !validUTF8(x)
+    if (any(bad, na.rm = TRUE)) {
+      x[bad] <- iconv(x[bad], from = "latin1", to = "UTF-8")
+    }
+    x
+  }
+
+  nac <- dplyr::mutate(
+    nac,
+    dplyr::across(where(is.character), fix_invalid_utf8)
+  )
 
   nac
 }
